@@ -1,0 +1,3 @@
+env: "local"
+http_server:
+  address: "localhost:8080"
