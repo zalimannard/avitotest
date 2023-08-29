@@ -2,6 +2,8 @@ package main
 
 import (
 	"avitotest/internal/config"
+	"avitotest/internal/lib/logger/sl"
+	"avitotest/internal/storage/postgres"
 	"log/slog"
 	"os"
 )
@@ -14,7 +16,15 @@ func main() {
 	cfg := config.MustLoad()
 
 	log := setupLogger(cfg.Env)
-	log.Info("Что")
+	log.Info("Логгер инициализирован")
+
+	storage, err := postgres.New(cfg.DbUrl)
+	if err != nil {
+		log.Error("Ошибка инициализации хранилища", sl.Err(err))
+		os.Exit(1)
+	}
+	_ = storage
+	log.Info("Хранилище инициализировано")
 }
 
 func setupLogger(env string) *slog.Logger {

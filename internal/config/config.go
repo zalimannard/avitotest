@@ -12,9 +12,7 @@ type Config struct {
 }
 
 type Database struct {
-	DbUrl      string `env:"DB_URL" env-required:"true"`
-	DbUser     string `env:"DB_USER" env-required:"true"`
-	DbPassword string `env:"DB_PASSWORD" env-required:"true"`
+	DbUrl string `env:"DB_URL" env-required:"true"`
 }
 
 type HttpServer struct {
