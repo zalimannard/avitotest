@@ -1,14 +1,11 @@
 package schema
 
-import "database/sql"
+import (
+	"avitotest/internal/storage/schema"
+)
 
-type User struct {
-	Id   int
-	Slug string
-}
-
-func InsertUser(db *sql.DB, request User) (createdEntityId int, err error) {
-	err = db.QueryRow(`
+func (s *Storage) InsertUser(request schema.User) (createdEntityId int, err error) {
+	err = s.Db.QueryRow(`
 		INSERT INTO
 			users (
 			    name
@@ -19,15 +16,15 @@ func InsertUser(db *sql.DB, request User) (createdEntityId int, err error) {
 		RETURNING ( 
 		    id
 		)
-	`, request.Slug).Scan(&createdEntityId)
+	`, request.Name).Scan(&createdEntityId)
 	if err != nil {
 		return 0, err
 	}
 	return createdEntityId, nil
 }
 
-func SelectUserById(db *sql.DB, id int) (user User, err error) {
-	err = db.QueryRow(`
+func (s *Storage) SelectUserById(id int) (user schema.User, err error) {
+	err = s.Db.QueryRow(`
 		SELECT
 		    id,
 		    name
@@ -37,15 +34,15 @@ func SelectUserById(db *sql.DB, id int) (user User, err error) {
 		    id = $1
 	`, id).Scan(
 		&user.Id,
-		&user.Slug)
+		&user.Name)
 	if err != nil {
-		return User{}, err
+		return schema.User{}, err
 	}
 	return user, err
 }
 
-func DeleteUserById(db *sql.DB, id int) (err error) {
-	_, err = db.Exec(`
+func (s *Storage) DeleteUserById(id int) (err error) {
+	_, err = s.Db.Exec(`
 		DELETE FROM
 		    users
 		WHERE
