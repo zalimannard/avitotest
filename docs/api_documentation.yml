@@ -1,0 +1,335 @@
+openapi: 3.0.0
+info:
+  title: API для тестового задания Avito
+  version: "1.0"
+
+tags:
+  - name: Сегменты
+    description: Человекопонятные названия групп
+  - name: Сегменты пользователя
+    description: Принадлежащие пользователю сегменты
+  - name: Отчёты
+    description: Отчёты о изменениях групп пользователей
+paths:
+  /segments:
+    post:
+      summary: Создать новый сегмент
+      tags:
+        - Сегменты
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slug:
+                  type: string
+                  description: Слаг для сегмента
+                  example: "EXAMPLE_SLUG"
+              required:
+                - slug
+      responses:
+        '201':
+          description: Сегмент успешно создан
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ok"
+                  id:
+                    type: integer
+                    description: Id созданного сегмента
+                    example: 1
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to decode request"
+        '409':
+          description: Сегмент конфликтует
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to save segment"
+    delete:
+      summary: Удалить сегмент
+      tags:
+        - Сегменты
+      parameters:
+        - in: query
+          name: slug
+          schema:
+            type: string
+          description: Слаг сегмента для удаления
+          required: true
+          example: "EXAMPLE_SLUG"
+      responses:
+        '204':
+          description: Сегмент успешно удален
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ok"
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to decode request"
+        '409':
+          description: Не удалось удалить сегмент
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to delete segment"
+  /reports:
+    get:
+      summary: Получить отчёт о действиях за месяц
+      tags:
+        - Отчёты
+      parameters:
+        - in: query
+          name: year
+          schema:
+            type: integer
+          description: Год, за который требуется отчёт
+          required: true
+          example: 2023
+        - in: query
+          name: month
+          schema:
+            type: integer
+            description: Месяц, за который требуется отчёт (от 1 до 12)
+          required: true
+          example: 8
+      responses:
+        '200':
+          description: Отчёт успешно сгенерирован
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    description: URL для скачивания CSV отчёта
+                    example: "http://server_address/reports/report_123456789.csv"
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error in parsing and validating request"
+        '409':
+          description: Произошла ошибка при создании отчёта
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to retrieve history records"
+  /users/{userId}/segments:
+    post:
+      summary: Назначить слаги для пользователя
+      tags:
+        - Сегменты пользователя
+      parameters:
+        - name: userId
+          in: path
+          description: ID пользователя
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slugs:
+                  type: array
+                  items:
+                    type: string
+                  description: Список слагов, который необходимо назначить пользователю
+      responses:
+        '200':
+          description: Слаги успешно назначены пользователю
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ok"
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid slug format"
+        '404':
+          description: Некоторые слаги не найдены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Some slugs do not exist"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error fetching current slugs for user"
+    delete:
+      summary: Удалить слаги у пользователя
+      tags:
+        - Сегменты пользователя
+      parameters:
+        - name: userId
+          in: path
+          description: ID пользователя
+          required: true
+          schema:
+            type: integer
+            format: int32
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                slugs:
+                  type: array
+                  items:
+                    type: string
+                  description: Список слагов для удаления у пользователя
+      responses:
+        '204':
+          description: Слаги успешно удалены у пользователя
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Invalid slug format"
+        '404':
+          description: Некоторые слаги не найдены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to fetch segment IDs by slugs"
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error fetching current slugs for user"
+    get:
+      summary: Получить слаги пользователя
+      tags:
+        - Сегменты пользователя
+      parameters:
+        - name: userId
+          in: path
+          description: ID пользователя
+          required: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        '200':
+          description: Слаги успешно извлечены
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Ok"
+                  userId:
+                    type: integer
+                    format: int32
+                    example: 123
+                  slugs:
+                    type: array
+                    items:
+                      type: string
+        '400':
+          description: Неверный запрос
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Error in request parsing and validation"
+        '409':
+          description: Конфликт при извлечении сегментов
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Failed to retrieve segments"

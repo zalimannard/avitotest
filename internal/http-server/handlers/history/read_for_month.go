@@ -27,10 +27,16 @@ type HistoryReportForMonthHandler interface {
 
 func parseAndValidateHistoryRequest(r *http.Request, log slog.Logger) (HistoryReportForMonthRequest, error) {
 	var req HistoryReportForMonthRequest
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
-		log.Error("Error decoding request body", sl.Err(err))
-		return req, errors.New("Error decoding request body")
+	year, err := strconv.Atoi(r.URL.Query().Get("year"))
+	if err != nil {
+		return req, errors.New("invalid year")
 	}
+	month, err := strconv.Atoi(r.URL.Query().Get("month"))
+	if err != nil {
+		return req, errors.New("invalid month")
+	}
+	req.Year = year
+	req.Month = month
 
 	if req.Year <= 0 || req.Month <= 0 || req.Month > 12 {
 		log.Error("Invalid year or month", sl.Err(errors.New("invalid year or month")))

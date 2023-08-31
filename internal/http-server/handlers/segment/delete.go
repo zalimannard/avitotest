@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
-	"io"
 	"log/slog"
 	"net/http"
 )
@@ -28,12 +27,10 @@ type DeleteSegmentHandler interface {
 func parseAndValidateDeleteRequest(r *http.Request, log slog.Logger) (*DeleteSegmentRequest, error) {
 	var req DeleteSegmentRequest
 
-	if err := render.DecodeJSON(r.Body, &req); err != nil {
-		log.Error("Failed to decode request body", sl.Err(err))
-		if errors.Is(err, io.EOF) {
-			return nil, errors.New("Empty request body")
-		}
-		return nil, errors.New("Failed to decode request")
+	req.Slug = r.URL.Query().Get("slug")
+	if req.Slug == "" {
+		log.Error("Slug parameter missing")
+		return nil, errors.New("Slug parameter is required")
 	}
 
 	if err := validators.Instance.Struct(req); err != nil {
