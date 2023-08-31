@@ -33,3 +33,22 @@ func (s *Storage) SelectRandomUsers(limit int) (userIds []int, err error) {
 
 	return userIds, nil
 }
+
+func (s *Storage) UserExists(userId int) (bool, error) {
+	var exists bool
+	err := s.Db.QueryRow(`
+		SELECT
+		    EXISTS(
+		    	SELECT
+		    	    1
+		    	FROM 
+		    	    users 
+		    	WHERE 
+		    	    id = $1
+		    )
+	`, userId).Scan(&exists)
+	if err != nil {
+		return false, err
+	}
+	return exists, nil
+}

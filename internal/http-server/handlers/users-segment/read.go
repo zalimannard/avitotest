@@ -21,6 +21,7 @@ type ReadUsersSegmentsResponse struct {
 
 type ReadUsersSegmentsHandler interface {
 	SelectSegmentsByUserId(userId int) (segments []schema.Segment, err error)
+	UserExists(userId int) (bool, error)
 }
 
 func parseAndValidateReadRequest(r *http.Request, log slog.Logger) (int, error) {
@@ -41,6 +42,18 @@ func ReadSlugs(log slog.Logger, handler ReadUsersSegmentsHandler) http.HandlerFu
 		if err != nil {
 			log.Error("Error in parsing and validating request", sl.Err(err))
 			error_handler.HandleError(w, r, http.StatusBadRequest, "Error in request parsing and validation")
+			return
+		}
+
+		exists, err := handler.UserExists(userId)
+		if err != nil {
+			log.Error("Failed to check user existence", sl.Err(err))
+			error_handler.HandleError(w, r, http.StatusInternalServerError, "Failed to verify user existence")
+			return
+		}
+
+		if !exists {
+			error_handler.HandleError(w, r, http.StatusNotFound, "User not found")
 			return
 		}
 
