@@ -13,13 +13,14 @@ import (
 )
 
 type AssignSlugsRequest struct {
-	Slugs []string `json:"slugs" validate:"required,dive,validateslug"` // Используем ваш валидатор
+	Slugs []string `json:"slugs" validate:"required,dive,validateslug"`
 }
 
 type AssignSlugsHandler interface {
 	SelectSegmentsByUserId(userId int) (segments []schema.Segment, err error)
 	SelectSegmentIdsBySlugs(slugs []string) ([]int, error)
 	AssignSegmentsToUser(userId int, segmentIds []int) error
+	InsertIntoHistory(userId int, slug string, actionType string) error
 }
 
 func AssignSlugs(log slog.Logger, handler AssignSlugsHandler) http.HandlerFunc {
@@ -63,14 +64,22 @@ func AssignSlugs(log slog.Logger, handler AssignSlugsHandler) http.HandlerFunc {
 		segmentIds, err := handler.SelectSegmentIdsBySlugs(newSlugs)
 		if err != nil {
 			log.Error("Failed to fetch segment IDs by slugs", err)
-			error_handler.HandleError(w, r, http.StatusInternalServerError, "Failed to fetch segment IDs by slugs")
+			error_handler.HandleError(w, r, http.StatusNotFound, "Failed to fetch segment IDs by slugs")
 			return
 		}
 
 		if err := handler.AssignSegmentsToUser(userId, segmentIds); err != nil {
 			log.Error("Failed to assign slugs to user", err)
-			error_handler.HandleError(w, r, http.StatusInternalServerError, "Failed to assign slugs to user")
+			error_handler.HandleError(w, r, http.StatusBadRequest, "Failed to assign slugs to user")
 			return
+		}
+
+		for _, newSlug := range newSlugs {
+			if err := handler.InsertIntoHistory(userId, newSlug, "added"); err != nil {
+				log.Error("Failed to insert slug assignment into history", err)
+				error_handler.HandleError(w, r, http.StatusInternalServerError, "Failed to insert slug assignment into history")
+				return
+			}
 		}
 
 		render.JSON(w, r, response.OkMessage())

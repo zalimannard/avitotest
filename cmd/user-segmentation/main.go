@@ -2,6 +2,7 @@ package main
 
 import (
 	"avitotest/internal/config"
+	"avitotest/internal/http-server/handlers/history"
 	"avitotest/internal/http-server/handlers/segment"
 	users_segment "avitotest/internal/http-server/handlers/users-segment"
 	mwLogger "avitotest/internal/http-server/middleware/logger"
@@ -15,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 )
 
@@ -38,7 +40,7 @@ func main() {
 	v := validator.New()
 	validators.RegisterCustomValidators(v)
 
-	router := setupRouter(log, storage)
+	router := setupRouter(log, storage, cfg)
 	log.Info("Router initialized")
 
 	done := make(chan os.Signal, 1)
@@ -61,7 +63,7 @@ func main() {
 	log.Info("Stopping server")
 }
 
-func setupRouter(log *slog.Logger, storage *schema.Storage) *chi.Mux {
+func setupRouter(log *slog.Logger, storage *schema.Storage, cfg *config.Config) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(middleware.RequestID)
@@ -80,6 +82,15 @@ func setupRouter(log *slog.Logger, storage *schema.Storage) *chi.Mux {
 				r.Post("/", users_segment.AssignSlugs(*log, storage))
 				r.Get("/", users_segment.ReadSlugs(*log, storage))
 			})
+		})
+		r.Route("/reports", func(r chi.Router) {
+			r.Get("/", history.ReadHistoryRecordsForMonth(*log, storage, cfg.Address, cfg.ReportDir))
+		})
+	})
+	router.Route("/reports", func(r chi.Router) {
+		r.Get("/{fileName}", func(w http.ResponseWriter, r *http.Request) {
+			fileName := chi.URLParam(r, "fileName") + ".csv"
+			http.ServeFile(w, r, path.Join(cfg.ReportDir, fileName))
 		})
 	})
 

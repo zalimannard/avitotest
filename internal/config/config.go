@@ -9,6 +9,7 @@ type Config struct {
 	Env string `env:"ENV" env-required:"true"`
 	Database
 	HttpServer
+	ReportDir string `env:"REPORT_DIR" env-default:"./reports"`
 }
 
 type Database struct {

@@ -35,6 +35,7 @@ func parseAndValidateReadRequest(r *http.Request, log slog.Logger) (int, error) 
 
 func ReadSlugs(log slog.Logger, handler ReadUsersSegmentsHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
 		userId, err := parseAndValidateReadRequest(r, log)
 		if err != nil {
 			log.Error("Error in parsing and validating request", sl.Err(err))
