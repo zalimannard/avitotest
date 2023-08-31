@@ -3,6 +3,7 @@ package schema
 import (
 	"avitotest/internal/storage/schema"
 	"fmt"
+	"strconv"
 	"time"
 )
 
@@ -21,6 +22,31 @@ func (s *Storage) InsertIntoHistory(userId int, slug string, actionType string) 
 		return err
 	}
 	return nil
+}
+
+func (s *Storage) InsertIntoHistoryBulk(userIds []int, segmentName string, actionType string) error {
+	query := `
+		INSERT INTO 
+		    history (
+		    	id_user, 
+		    	segment_name,
+		    	action_type,
+		        action_date
+		    )
+		VALUES 
+	`
+	currentTime := time.Now()
+	values := []interface{}{}
+	for i, userID := range userIds {
+		if i > 0 {
+			query += ","
+		}
+		query += "($" + strconv.Itoa(i*4+1) + ", $" + strconv.Itoa(i*4+2) + ", $" + strconv.Itoa(i*4+3) + ", $" + strconv.Itoa(i*4+4) + ")"
+		values = append(values, userID, segmentName, actionType, currentTime)
+	}
+
+	_, err := s.Db.Exec(query, values...)
+	return err
 }
 
 func (s *Storage) ReadHistoryRecordsForMonth(year, month int) ([]schema.HistoryRecord, error) {

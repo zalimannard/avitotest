@@ -1,55 +1,35 @@
 package schema
 
-import (
-	"avitotest/internal/storage/schema"
-)
-
-func (s *Storage) InsertUser(request schema.User) (createdEntityId int, err error) {
+func (s *Storage) GetTotalUsersCount() (totalUsers int, err error) {
 	err = s.Db.QueryRow(`
-		INSERT INTO
-			users (
-			    name
-			)
-		VALUES (
-		    $1
-		)
-		RETURNING ( 
-		    id
-		)
-	`, request.Name).Scan(&createdEntityId)
+		SELECT COUNT(*) FROM users
+	`).Scan(&totalUsers)
 	if err != nil {
 		return 0, err
 	}
-	return createdEntityId, nil
+	return totalUsers, nil
 }
 
-func (s *Storage) SelectUserById(id int) (user schema.User, err error) {
-	err = s.Db.QueryRow(`
-		SELECT
-		    id,
-		    name
-		FROM
-		    users
-		WHERE
-		    id = $1
-	`, id).Scan(
-		&user.Id,
-		&user.Name)
+func (s *Storage) SelectRandomUsers(limit int) (userIds []int, err error) {
+	rows, err := s.Db.Query(`
+		SELECT id FROM users ORDER BY RANDOM() LIMIT $1
+	`, limit)
 	if err != nil {
-		return schema.User{}, err
+		return nil, err
 	}
-	return user, err
-}
+	defer rows.Close()
 
-func (s *Storage) DeleteUserById(id int) (err error) {
-	_, err = s.Db.Exec(`
-		DELETE FROM
-		    users
-		WHERE
-		    id = $1
-	`, id)
-	if err != nil {
-		return err
+	for rows.Next() {
+		var id int
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		userIds = append(userIds, id)
 	}
-	return nil
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return userIds, nil
 }

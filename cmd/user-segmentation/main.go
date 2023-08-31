@@ -77,11 +77,16 @@ func setupRouter(log *slog.Logger, storage *schema.Storage, cfg *config.Config) 
 			r.Post("/", segment.Insert(*log, storage))
 			r.Delete("/", segment.Delete(*log, storage))
 		})
-		r.Route("/users/{userId}", func(r chi.Router) {
-			r.Route("/segments", func(r chi.Router) {
-				r.Post("/", users_segment.AssignSlugs(*log, storage))
-				r.Delete("/", users_segment.DischargeSlugs(*log, storage))
-				r.Get("/", users_segment.ReadSlugs(*log, storage))
+		r.Route("/users", func(r chi.Router) {
+			r.Route("/segments/percent", func(r chi.Router) {
+				r.Post("/", users_segment.AssignPercent(*log, storage))
+			})
+			r.Route("/{userId}", func(r chi.Router) {
+				r.Route("/segments", func(r chi.Router) {
+					r.Post("/", users_segment.AssignSlugs(*log, storage))
+					r.Delete("/", users_segment.DischargeSlugs(*log, storage))
+					r.Get("/", users_segment.ReadSlugs(*log, storage))
+				})
 			})
 		})
 		r.Route("/reports", func(r chi.Router) {
