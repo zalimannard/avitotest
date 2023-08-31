@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  user-segmentation:
+    container_name: user-segmentation
+    image: user-segmentation
+    build:
+      context: .
+    ports:
+      - "8080:8080"
