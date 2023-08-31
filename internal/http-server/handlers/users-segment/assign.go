@@ -25,6 +25,8 @@ type AssignSlugsHandler interface {
 
 func AssignSlugs(log slog.Logger, handler AssignSlugsHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		userIdStr := chi.URLParam(r, "userId")
 		userId, err := strconv.Atoi(userIdStr)
 		if err != nil {

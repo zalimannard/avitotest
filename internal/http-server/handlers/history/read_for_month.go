@@ -42,6 +42,8 @@ func parseAndValidateHistoryRequest(r *http.Request, log slog.Logger) (HistoryRe
 
 func ReadHistoryRecordsForMonth(log slog.Logger, handler HistoryReportForMonthHandler, serverAddress string, reportDir string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		req, err := parseAndValidateHistoryRequest(r, log)
 		if err != nil {
 			log.Error("Error in parsing and validating request", sl.Err(err))

@@ -48,6 +48,8 @@ func parseAndValidateDeleteRequest(r *http.Request, log slog.Logger) (*DeleteSeg
 
 func Delete(log slog.Logger, handler DeleteSegmentHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		req, err := parseAndValidateDeleteRequest(r, log)
 		if err != nil {
 			log.Error("Failed to decode request", sl.Err(err))

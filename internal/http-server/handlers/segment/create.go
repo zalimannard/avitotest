@@ -50,6 +50,8 @@ func parseAndValidate(r *http.Request, log slog.Logger) (*CreateSegmentRequest, 
 
 func Insert(log slog.Logger, handler CreateSegmentHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
 		req, err := parseAndValidate(r, log)
 		if err != nil {
 			log.Error("Failed to decode request", sl.Err(err))
