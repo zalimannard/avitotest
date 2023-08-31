@@ -80,6 +80,7 @@ func setupRouter(log *slog.Logger, storage *schema.Storage, cfg *config.Config) 
 		r.Route("/users/{userId}", func(r chi.Router) {
 			r.Route("/segments", func(r chi.Router) {
 				r.Post("/", users_segment.AssignSlugs(*log, storage))
+				r.Delete("/", users_segment.DischargeSlugs(*log, storage))
 				r.Get("/", users_segment.ReadSlugs(*log, storage))
 			})
 		})

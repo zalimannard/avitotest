@@ -12,18 +12,18 @@ import (
 	"strconv"
 )
 
-type AssignSlugsRequest struct {
+type DischargeSlugsRequest struct {
 	Slugs []string `json:"slugs" validate:"required,dive,validateslug"`
 }
 
-type AssignSlugsHandler interface {
+type DischargeSlugsHandler interface {
 	SelectSegmentsByUserId(userId int) (segments []schema.Segment, err error)
 	SelectSegmentIdsBySlugs(slugs []string) ([]int, error)
-	AssignSegmentsToUser(userId int, segmentIds []int) error
+	DischargeSegmentsToUser(userId int, segmentIds []int) error
 	InsertIntoHistory(userId int, slug string, actionType string) error
 }
 
-func AssignSlugs(log slog.Logger, handler AssignSlugsHandler) http.HandlerFunc {
+func DischargeSlugs(log slog.Logger, handler DischargeSlugsHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
@@ -56,57 +56,35 @@ func AssignSlugs(log slog.Logger, handler AssignSlugsHandler) http.HandlerFunc {
 		}
 		currentSlugs := extractSlugsFromSegments(currentSegments)
 
-		var newSlugs []string
+		var slugsToDelete []string
 		for _, slug := range req.Slugs {
-			if !contains(currentSlugs, slug) {
-				newSlugs = append(newSlugs, slug)
+			if contains(currentSlugs, slug) {
+				slugsToDelete = append(slugsToDelete, slug)
 			}
 		}
 
-		segmentIds, err := handler.SelectSegmentIdsBySlugs(newSlugs)
+		segmentIds, err := handler.SelectSegmentIdsBySlugs(slugsToDelete)
 		if err != nil {
 			log.Error("Failed to fetch segment IDs by slugs", err)
 			error_handler.HandleError(w, r, http.StatusNotFound, "Failed to fetch segment IDs by slugs")
 			return
 		}
 
-		if err := handler.AssignSegmentsToUser(userId, segmentIds); err != nil {
-			log.Error("Failed to assign slugs to user", err)
-			error_handler.HandleError(w, r, http.StatusBadRequest, "Failed to assign slugs to user")
+		if err := handler.DischargeSegmentsToUser(userId, segmentIds); err != nil {
+			log.Error("Failed to discharge slugs to user", err)
+			error_handler.HandleError(w, r, http.StatusBadRequest, "Failed to discharge slugs to user")
 			return
 		}
 
-		if len(segmentIds) != len(newSlugs) {
-			log.Error("Some slugs do not exist", err)
-			error_handler.HandleError(w, r, http.StatusNotFound, "Some slugs do not exist")
-			return
-		}
-
-		for _, newSlug := range newSlugs {
-			if err := handler.InsertIntoHistory(userId, newSlug, "added"); err != nil {
+		for _, newSlug := range slugsToDelete {
+			if err := handler.InsertIntoHistory(userId, newSlug, "removed"); err != nil {
 				log.Error("Failed to insert slug assignment into history", err)
 				error_handler.HandleError(w, r, http.StatusInternalServerError, "Failed to insert slug assignment into history")
 				return
 			}
 		}
 
+		w.WriteHeader(http.StatusNoContent)
 		render.JSON(w, r, response.OkMessage())
 	}
-}
-
-func extractSlugsFromSegments(segments []schema.Segment) []string {
-	var slugs []string
-	for _, segment := range segments {
-		slugs = append(slugs, segment.Slug)
-	}
-	return slugs
-}
-
-func contains(slugs []string, slug string) bool {
-	for _, s := range slugs {
-		if s == slug {
-			return true
-		}
-	}
-	return false
 }
